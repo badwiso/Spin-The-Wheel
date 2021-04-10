@@ -1,28 +1,23 @@
-import { Component } from '@angular/core';
+import { Component, NgZone, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 import { ElectronService } from './core/services';
-import { TranslateService } from '@ngx-translate/core';
-import { AppConfig } from '../environments/environment';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss']
 })
-export class AppComponent {
-  constructor(
-    private electronService: ElectronService,
-    private translate: TranslateService
-  ) {
-    this.translate.setDefaultLang('en');
-    console.log('AppConfig', AppConfig);
-
-    if (electronService.isElectron) {
-      console.log(process.env);
-      console.log('Run in electron');
-      console.log('Electron ipcRenderer', this.electronService.ipcRenderer);
-      console.log('NodeJS childProcess', this.electronService.childProcess);
-    } else {
-      console.log('Run in browser');
-    }
+export class AppComponent implements OnInit {
+  constructor(private electronService:ElectronService,private router:Router,private zone:NgZone) {
+  }
+  ngOnInit():void{
+    this.electronService.ipcRenderer.once('identity',(_,id)=>{
+      if(id==='child')  this.navigate2('/detail');//if child process redirect to detail
+      else this.navigate2('/login');               // else redirect to home
+    });
+    this.electronService.ipcRenderer.send('identity');
+  }
+  navigate2(route:string):void{
+    this.zone.run(()=>this.router.navigateByUrl(route));
   }
 }
